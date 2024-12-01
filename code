@@ -1,0 +1,356 @@
+#include <stdio.h>
+#include <string.h>
+
+int menu();
+int getGridAndCheck(char string[82], int grid[][9], int positionGrid[][9]);
+int checkGrid(int grid[][9]);
+int checkRows(int grid[][9]);
+int checkColumns(int grid[][9]);
+int checkSquares(int grid[][9]);
+int checkNewSolution(int grid[][9], int positionGrid[][9]);
+void printGrid(int grid[][9], int positionGrid[][9]);
+void insertValue(int i, int j, int value, int grid[][9], int positionGrid[][9]);
+void removeValue(int i, int j, int grid[][9], int positionGrid[][9]);
+void resetGrid(int grid[][9]);
+int getSize(int grid[][9]);
+int exitGame();
+void copyGrid(int grid1[][9], int grid2[][9]);
+
+int main() {
+    int grid[9][9];
+    int newGrid[9][9];
+    int startingGrid[9][9];
+    int positionGrid[9][9];
+    int newPositionGrid[9][9];
+    int startingPositionGrid[9][9];
+    char gridString[82];
+    char newString[82];
+    int i, j, value;
+    int scelta;
+    int exit;
+
+    exit = 0;
+    resetGrid(grid);
+    resetGrid(positionGrid);
+    resetGrid(newGrid);
+    resetGrid(newPositionGrid);
+    resetGrid(startingGrid);
+    resetGrid(startingPositionGrid);
+
+    do {
+        printf("Inserire una griglia di partenza\n");
+        scanf("%s", gridString);
+        }
+    while(!getGridAndCheck(gridString, grid, positionGrid) || strlen(gridString) != 81);
+
+    copyGrid(startingGrid, grid);
+    copyGrid(startingPositionGrid, positionGrid);
+
+    while(!exit) {
+        printGrid(grid, positionGrid);
+
+        if(getSize(grid) == 81) {
+            if(checkGrid(grid)) {
+                printf("Griglia corretta\n");
+                printf("Terminare la partita (0) o avviarne una nuova (1) ?\n");
+                scanf("%d", &scelta);
+            }
+            else {
+                printf("\nGriglia non corretta");
+            }
+        }
+
+        scelta = menu();
+
+        if(scelta == 0) { //exit
+            exit = exitGame();
+        }
+
+        else if(scelta == 1) { //new game
+            resetGrid(grid);
+            resetGrid(positionGrid);
+            resetGrid(startingGrid);
+            resetGrid(startingPositionGrid);
+            do {
+                printf("Inserire una griglia di partenza\n");
+                scanf("%s", gridString);
+            }
+            while(!getGridAndCheck(gridString, grid, positionGrid) || strlen(gridString) != 81);
+
+            copyGrid(startingGrid, grid);
+            copyGrid(startingPositionGrid, positionGrid);
+        }
+
+        else if(scelta == 2) { //insert value
+            printf("Inserire numero di riga --> ");
+            scanf("%d", &i);
+            printf("Inserire numero di colonna --> ");
+            scanf("%d", &j);
+            printf("Inserire il valore --> ");
+            scanf("%d", &value);
+            insertValue(i, j, value, grid, positionGrid);
+        }
+        
+        else if(scelta == 3) { //remove value
+            printf("Inserire numero di riga --> ");
+            scanf("%d", &i);
+            printf("Inserire numero di colonna --> ");
+            scanf("%d", &j);
+            removeValue(i, j, grid, positionGrid);
+        }
+
+        else if(scelta == 4) { //check current solution
+            if(checkGrid(grid)) {
+                printf("\nVALIDA");
+                if(getSize(grid) == 81) {
+                    printf("\nCOMPLETA");
+                }
+            }
+            else {
+                printf("\nERRATA");
+            }
+        }
+
+        else if(scelta == 5) { //get solution and check
+            printf("Caricare una soluzione\n");
+            scanf("%s", newString);
+            resetGrid(newGrid);
+            resetGrid(newPositionGrid);
+            if(!getGridAndCheck(newString, newGrid, newPositionGrid) || strlen(newString) != 81) {
+                printf("\nSoluzione caricata correttamente");
+                strcpy(gridString, newString);
+
+                copyGrid(startingGrid, newGrid);
+                copyGrid(grid, newGrid);
+                copyGrid(startingPositionGrid, newPositionGrid);
+                copyGrid(positionGrid, newPositionGrid);
+
+                if(getSize(newGrid) == 81) {
+                    printf("\nSoluzione completa");
+                }
+            }
+            else {
+                printf("\nErrore nel caricamento della soluzione");
+            }
+            
+        }
+
+        else if(scelta == 6) { //restart
+            copyGrid(grid, startingGrid);
+            copyGrid(positionGrid, startingPositionGrid);
+        }
+    }
+    printf("\nPartita terminata");
+
+    return 0;
+}
+
+int menu() {
+    int scelta;
+    printf("Menu\n");
+    printf("1 - avvia nuova partita\n");
+    printf("2 - inserisci valore\n");
+    printf("3 - cancella valore\n");
+    printf("4 - verifica soluzione attuale\n");
+    printf("5 - carica una soluzione e verificala\n");
+    printf("6 - riavvia partita attuale\n");
+    printf("0 - esci\n");
+    scanf("%d", &scelta);
+    if(scelta >= 0 && scelta < 7) {
+        return scelta;
+    }
+}
+
+void resetGrid(int grid[][9]) {
+    int i, j;
+    for(i = 0; i < 9; i++) {
+        for(j = 0; j < 9; j++) {
+            grid[i][j] = 0;
+        }
+    }
+}
+
+int checkGrid(int grid[][9]) {
+    return checkRows(grid) && checkColumns(grid) && checkSquares(grid);
+}
+
+int checkRows(int grid[][9]) {
+    int i, j, k;
+    int flag;
+    int occorrenze[9] = {0};
+    flag = 0;
+    for(i = 0; i < 9 && !flag; i++) {
+        for(j = 0; j < 9; j++) {
+            occorrenze[grid[i][j] - 1]++;
+        }
+        for(k = 0; k < 9 && !flag; k++) {
+            if(occorrenze[k] > 1) {
+                flag = 1;
+            }
+        }
+        for(k = 0; k < 9; k++) {
+            occorrenze[k] = 0;
+        }
+    }
+    return !flag;
+}
+
+int checkColumns(int grid[][9]) {
+    int i, j, k;
+    int flag;
+    int occorrenze[9] = {0};
+    flag = 0;
+    for(i = 0; i < 9 && !flag; i++) {
+        for(j = 0; j < 9; j++) {
+            occorrenze[grid[j][i] - 1]++;
+        }
+        for(k = 0; k < 9 && !flag; k++) {
+            if(occorrenze[k] > 1) {
+                flag = 1;
+            }
+        }
+        for(k = 0; k < 9; k++) {
+            occorrenze[k] = 0;
+        }
+    }
+    return !flag;
+}
+
+int checkSquares(int grid[][9]) {
+    int i, j, k, l, m;
+    int flag;
+    int occorrenze[9] = {0};
+    flag = 0;
+    for(m = 0; m < 3 && !flag; m++) {
+        for(l = 0; l < 3; l++) {
+            for(i = 0; i < 3; i++) {
+                for(j = 0; j < 3; j++) {
+                    occorrenze[grid[i + m * 3][j + l * 3] - 1]++;
+                }
+            }
+            for(k = 0; k < 9 && !flag; k++) {
+                if(occorrenze[k] > 1) {
+                    flag = 1;
+                }
+            }
+            for(k = 0; k < 9; k++) {
+                occorrenze[k] = 0;
+            }
+        }
+    }
+    return !flag;
+}
+
+void printGrid(int grid[][9], int positionGrid[][9]) {
+    int i, j, k, l;
+    printf("\n");
+    for(l = 0; l < 3; l++) {
+        printf("+---------+---------+---------+\n");
+        for(k = 0; k < 3; k++) {
+            for(i = 0; i < 3; i++) {
+                printf("|");
+                for(j = 0; j < 3; j++) {
+                    if(positionGrid[k + l * 3][j + i * 3] <= -1) {
+                        printf(" %d ", grid[k + l * 3][j + i * 3]);
+                    }
+                    else if(positionGrid[k + l * 3][j + i * 3] == 0) {
+                        printf("   ");
+                    }
+                    else if(positionGrid[k + l * 3][j + i * 3] >= 1 && positionGrid[k + l * 3][j + i * 3] <= 9) {
+                        printf(" %d*", grid[k + l * 3][j + i * 3]);
+                    }
+                }
+            }
+            printf("|\n");
+        }
+    }
+    printf("+---------+---------+---------+\n");
+}
+
+int getGridAndCheck(char string[82], int grid[][9], int positionGrid[][9]) {
+    int i, j, position;
+    /*copy string into grid*/
+    position = 0;
+    for(i = 0; i < 9; i++) {
+        for(j = 0; j < 9; j++) {
+            if(string[position] >= '1' && string[position] <= '9' ) {
+                grid[i][j] = string[position] - '0';
+                positionGrid[i][j] = string[position] - '0';
+            }
+            else {
+                grid[i][j] = 0;
+                positionGrid[i][j] = 0;
+            }
+            position++;
+        }
+    }
+    return checkGrid(grid);
+}
+
+int checkNewSolution(int grid[][9], int positionGrid[][9]) {
+    int i, j, flag;
+    flag = 0;
+
+    for(i = 0; i < 9 && !flag; i++) {
+        for(j = 0; j < 9; j++) {
+            if(!(grid[i][j] == positionGrid[i][j] || positionGrid[i][j] == -grid[i][j])) {
+                flag = 1;
+            }
+        }
+    }
+    return !flag;
+}
+
+void insertValue(int i, int j, int value, int grid[][9], int positionGrid[][9]) {
+    if(i >= 1 && i <= 9 && j >= 1 && j <= 9 && value >= 1 && value <= 9) {
+        if(positionGrid[i - 1][j - 1] == 0) {
+            positionGrid[i - 1][j - 1] = -value;
+            grid[i - 1][j - 1] = value;
+        }
+        else {
+            printf("\nErrore nell'inseriremento di un valore\n");
+        }
+    }
+}
+
+void removeValue(int i, int j, int grid[][9], int positionGrid[][9]) {
+    if(i >= 1 && i <= 9 && j >= 1 && j <= 9) {
+        if(positionGrid[i - 1][j - 1] <= 0) {
+            positionGrid[i - 1][j - 1] = 0;
+            grid[i - 1][j - 1] = 0;
+        }
+        else {
+            printf("\nErrore nella rimozione di un valore\n");
+        }
+    }
+}
+
+int getSize(int grid[][9]) {
+    int i, j, size;
+    size = 0;
+
+    for(i = 0; i < 9; i++) {
+        for(j = 0; j < 9; j++) {
+            if(grid[i][j] != 0) {
+                size++;
+            }
+        }
+    }
+    return size;
+}
+
+int exitGame() {
+    int exit;
+    printf("Terminare la partita ? 1 - si, 0 - no --> ");
+    scanf("%d", &exit);
+    return exit;
+}
+
+void copyGrid(int grid1[][9], int grid2[][9]) {
+    int i, j;
+    for(i = 0; i < 9; i++) {
+        for (j = 0; j < 9; j++) {
+            grid1[i][j] = grid2[i][j];
+        } 
+    }
+}
